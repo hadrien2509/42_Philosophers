@@ -1,23 +1,20 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_strlen.c                                        :+:      :+:    :+:   */
+/*   ft_isdigit.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/10/04 12:33:44 by samy              #+#    #+#             */
-/*   Updated: 2023/06/05 15:14:02 by hgeissle         ###   ########.fr       */
+/*   Created: 2022/10/04 12:10:18 by samy              #+#    #+#             */
+/*   Updated: 2023/06/05 15:14:50 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../philosophers.h"
 
-int	ft_strlen(const char *s)
+int	ft_isdigit(int c)
 {
-	int	i;
-
-	i = 0;
-	while (s[i])
-		i++;
-	return (i);
+	if (c >= '0' && c <= '9')
+		return (1);
+	return (0);
 }
