@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/13 17:42:09 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/14 17:51:25 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,23 +46,23 @@ long long	timeval_to_long(const struct timeval *tv)
 
 int	get_timer(t_philothread *philo)
 {
-	struct timeval	*tv;
+	struct timeval	tv;
 	long long		current_time;
 
-	if (gettimeofday(tv, NULL) == -1)
+	if (gettimeofday(&tv, NULL) == -1)
 		return (print_error("gettimeofday error\n"));
-	current_time = timeval_to_long(tv);
+	current_time = timeval_to_long(&tv);
 	philo->timer = current_time - philo->launch_time;
 	return (0);
 }
 
 void	init_data(t_philo *data, int ac, char **av)
 {
-	struct timeval	*tv;
+	struct timeval	tv;
 
-	if (gettimeofday(tv, NULL) == -1)
+	if (gettimeofday(&tv, NULL) == -1)
 		exit (print_error("gettimeofday error\n"));
-	data->launch_time = timeval_to_long(tv);
+	data->launch_time = timeval_to_long(&tv);
 	data->nbr_of_philos = ft_atoi(av[1]);
 	data->time_to_die = ft_atoi(av[2]);
 	data->time_to_eat = ft_atoi(av[3]);
@@ -71,7 +71,29 @@ void	init_data(t_philo *data, int ac, char **av)
 		data->must_eat = ft_atoi(av[5]);
 	else
 		data->must_eat = -1;
-	data->last_meal = 0;
+	data->last_meal = data->launch_time;
+	data->lock = malloc(sizeof(pthread_mutex_t));
+	if (!data->lock)
+		exit (printf("malloc failed\n"));
+	if (pthread_mutex_init(data->lock, NULL) != 0)
+		exit (print_error("\n mutex init failed\n"));
+}
+
+void	print_mutex(t_philothread *philo, int status)
+{
+	pthread_mutex_lock(philo->lock);
+	ft_putnbr(philo->timer);
+	ft_putstr(" ");
+	ft_putnbr(philo->nbr);
+	if (status == 1)
+		ft_putstr(" has taken a fork\n");
+	if (status == 2)
+		ft_putstr(" is eating\n");
+	if (status == 3)
+		ft_putstr(" is sleeping\n");
+	if (status == 4)
+		ft_putstr(" is thinking\n");
+	pthread_mutex_unlock(philo->lock);
 }
 
 void	*routine(t_philothread *philo)
@@ -79,12 +101,13 @@ void	*routine(t_philothread *philo)
 	while (1)
 	{
 		get_timer(philo);
-		printf("%lld %d has taken a fork\n", philo->timer, philo->nbr);
-		printf("%lld %d is eating\n", philo->timer, philo->nbr);
+		print_mutex(philo, 1);
+		print_mutex(philo, 2);
 		usleep(philo->time_to_eat * 1000);
 		get_timer(philo);
-		printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
+		print_mutex(philo, 3);
 		usleep(philo->time_to_sleep * 1000);
+		print_mutex(philo, 4);
 	}
 	return (NULL);
 }
@@ -110,6 +133,7 @@ void	init_philos(t_philo *data)
 		data->philos[i - 1]->must_eat = data->must_eat;
 		data->philos[i - 1]->must_eat = data->last_meal;
 		data->philos[i - 1]->launch_time = data->launch_time;
+		data->philos[i - 1]->lock = data->lock;
 		// data->philos[i - 1]->thread = malloc(sizeof(pthread_t));
 		// if (!data->philos[i - 1]->thread)
 		// 	exit (1);

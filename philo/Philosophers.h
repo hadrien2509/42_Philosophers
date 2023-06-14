@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 14:57:50 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/13 16:13:41 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/14 16:45:13 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ typedef struct s_philothread
 	long long		timer;
 	struct timeval	*current_time;
 	pthread_t		thread;
+	pthread_mutex_t	*lock;
 }				t_philothread;
 
 typedef struct s_philo
@@ -52,11 +53,17 @@ typedef struct s_philo
 	long long		last_meal;
 	long long		launch_time;
 	long long		timer;
+	pthread_mutex_t	*lock;
 }				t_philo;
 
 int		ft_atoi(const char *str);
 int		ft_strlen(const char *s);
 void	ft_putstr_fd(char *s, int fd);
+void	ft_putnbr_fd(int n, int fd);
+void	ft_putchar_fd(char c, int fd);
+void	ft_putstr(char *s);
+void	ft_putnbr(int n);
+void	ft_putchar(char c);
 int		ft_isdigit(int c);
 
 #endif 
