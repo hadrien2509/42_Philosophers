@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/14 17:51:25 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/15 15:46:50 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,7 @@ int	get_timer(t_philothread *philo)
 void	init_data(t_philo *data, int ac, char **av)
 {
 	struct timeval	tv;
+	int				i;
 
 	if (gettimeofday(&tv, NULL) == -1)
 		exit (print_error("gettimeofday error\n"));
@@ -77,6 +78,15 @@ void	init_data(t_philo *data, int ac, char **av)
 		exit (printf("malloc failed\n"));
 	if (pthread_mutex_init(data->lock, NULL) != 0)
 		exit (print_error("\n mutex init failed\n"));
+	data->table = malloc(sizeof(int) * data->nbr_of_philos);
+	if (!data->table)
+		exit (print_error("malloc failed\n"));
+	i = 0;
+	while (i < data->nbr_of_philos)
+	{
+		data->table[i] = 1;
+		i++;
+	}
 }
 
 void	print_mutex(t_philothread *philo, int status)
@@ -96,17 +106,53 @@ void	print_mutex(t_philothread *philo, int status)
 	pthread_mutex_unlock(philo->lock);
 }
 
+int	take_forks(t_philothread *philo)
+{
+	pthread_mutex_lock(philo->lock);
+	if (philo->nbr == 1 && philo->table[philo->nbr_of_philos - 1] == 0)
+	{
+		pthread_mutex_unlock(philo->lock);
+		return (1);
+	}
+	if (philo->nbr != 1 && philo->table[philo->nbr - 2] == 0)
+	{
+		pthread_mutex_unlock(philo->lock);
+		return (1);
+	}
+	if (philo->table[philo->nbr - 1] == 0)
+	{
+		pthread_mutex_unlock(philo->lock);
+		return (1);
+	}
+	if (philo->nbr == 1)
+		philo->table[philo->nbr_of_philos - 1] = 0;
+	else
+		philo->table[philo->nbr - 2] = 0;
+	philo->table[philo->nbr - 1] = 0;
+	pthread_mutex_unlock(philo->lock);
+	return (0);
+}
+
 void	*routine(t_philothread *philo)
 {
 	while (1)
 	{
-		get_timer(philo);
-		print_mutex(philo, 1);
-		print_mutex(philo, 2);
-		usleep(philo->time_to_eat * 1000);
-		get_timer(philo);
-		print_mutex(philo, 3);
-		usleep(philo->time_to_sleep * 1000);
+		if (take_forks(philo) == 0)
+		{
+			get_timer(philo);
+			print_mutex(philo, 1);
+			print_mutex(philo, 1);
+			print_mutex(philo, 2);
+			usleep(philo->time_to_eat * 1000);
+			get_timer(philo);
+			print_mutex(philo, 3);
+			if (philo->nbr == 1)
+				philo->table[philo->nbr_of_philos - 1] = 0;
+			else
+				philo->table[philo->nbr - 2] = 0;
+			philo->table[philo->nbr - 1] = 0;
+			usleep(philo->time_to_sleep * 1000);
+		}
 		print_mutex(philo, 4);
 	}
 	return (NULL);
@@ -134,6 +180,8 @@ void	init_philos(t_philo *data)
 		data->philos[i - 1]->must_eat = data->last_meal;
 		data->philos[i - 1]->launch_time = data->launch_time;
 		data->philos[i - 1]->lock = data->lock;
+		data->philos[i - 1]->table = data->table;
+		data->philos[i - 1]->nbr_of_philos = data->nbr_of_philos;
 		// data->philos[i - 1]->thread = malloc(sizeof(pthread_t));
 		// if (!data->philos[i - 1]->thread)
 		// 	exit (1);

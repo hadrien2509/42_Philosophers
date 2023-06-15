@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 14:57:50 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/14 16:45:13 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/15 15:16:17 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,9 +30,11 @@
 typedef struct s_philothread
 {
 	long long		time_to_die;
+	int				nbr_of_philos;
 	long long		time_to_eat;
 	long long		time_to_sleep;
 	int				must_eat;
+	int				*table;
 	long long		last_meal;
 	int				nbr;
 	long long		launch_time;
@@ -46,6 +48,7 @@ typedef struct s_philo
 {
 	t_philothread	**philos;
 	int				nbr_of_philos;
+	int				*table;
 	long long		time_to_die;
 	long long		time_to_eat;
 	long long		time_to_sleep;
