@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/15 15:46:50 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/16 17:31:47 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,20 +89,13 @@ void	init_data(t_philo *data, int ac, char **av)
 	}
 }
 
-void	print_mutex(t_philothread *philo, int status)
+void	print_mutex(t_philothread *philo, char *str)
 {
 	pthread_mutex_lock(philo->lock);
 	ft_putnbr(philo->timer);
 	ft_putstr(" ");
 	ft_putnbr(philo->nbr);
-	if (status == 1)
-		ft_putstr(" has taken a fork\n");
-	if (status == 2)
-		ft_putstr(" is eating\n");
-	if (status == 3)
-		ft_putstr(" is sleeping\n");
-	if (status == 4)
-		ft_putstr(" is thinking\n");
+	ft_putstr(str);
 	pthread_mutex_unlock(philo->lock);
 }
 
@@ -140,20 +133,21 @@ void	*routine(t_philothread *philo)
 		if (take_forks(philo) == 0)
 		{
 			get_timer(philo);
-			print_mutex(philo, 1);
-			print_mutex(philo, 1);
-			print_mutex(philo, 2);
+			print_mutex(philo, " has taken a fork\n");
+			print_mutex(philo, " has taken a fork\n");
+			print_mutex(philo, " is eating\n");
 			usleep(philo->time_to_eat * 1000);
 			get_timer(philo);
-			print_mutex(philo, 3);
 			if (philo->nbr == 1)
-				philo->table[philo->nbr_of_philos - 1] = 0;
+				philo->table[philo->nbr_of_philos - 1] = 1;
 			else
-				philo->table[philo->nbr - 2] = 0;
-			philo->table[philo->nbr - 1] = 0;
+				philo->table[philo->nbr - 2] = 1;
+			philo->table[philo->nbr - 1] = 1;
+			print_mutex(philo, " is sleeping\n");
 			usleep(philo->time_to_sleep * 1000);
+			get_timer(philo);
+			print_mutex(philo, " is thinking\n");
 		}
-		print_mutex(philo, 4);
 	}
 	return (NULL);
 }

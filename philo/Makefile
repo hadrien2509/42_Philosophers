@@ -6,7 +6,7 @@
 #    By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/06/05 14:10:57 by hgeissle          #+#    #+#              #
-#    Updated: 2023/06/14 16:35:11 by hgeissle         ###   ########.fr        #
+#    Updated: 2023/06/16 14:12:29 by hgeissle         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -19,7 +19,7 @@ SRC = main.c\
 		not_libft/ft_isdigit.c\
 		not_libft/ft_putstr.c\
 
-FLAGS = -Wall -Wextra -Werror -fsanitize=address
+FLAGS = -Wall -Wextra -Werror
 RM = rm -f
 OBJS = $(SRC:.c=.o)
 
