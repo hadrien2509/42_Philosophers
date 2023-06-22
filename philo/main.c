@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/20 18:29:44 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/22 18:39:53 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,13 +130,55 @@ int	take_forks(t_philothread *philo)
 	return (0);
 }
 
+void	ft_usleep(long long time, t_philothread *philo)
+{
+	struct timeval	*tv;
+	long long		old;
+
+	old = philo->timer;
+	while (philo->timer < old + time - 100)
+	{
+		usleep(100);
+		get_timer(philo);
+		// printf("%lld < %lld ?\n", philo->timer, old + time - 1000);
+	}
+}
+
+void	start_forks(t_philothread *philo)
+{
+	if (philo->nbr % 2 == 1 && philo->nbr != philo->nbr_of_philos)
+	{
+		if (philo->nbr == 1)
+			philo->table[philo->nbr_of_philos - 1] = 0;
+		else
+			philo->table[philo->nbr - 1] = 0;
+		philo->table [philo->nbr - 2] = 0;
+		get_timer(philo);
+		printf("%lld %d has taken a fork\n%lld %d has taken a fork\n%lld %d is eating\n", philo->timer, philo->nbr, philo->timer, philo->nbr, philo->timer, philo->nbr);
+		ft_usleep(philo->time_to_eat, philo);
+		if (philo->nbr == 1)
+			philo->table[philo->nbr_of_philos - 1] = 1;
+		else
+			philo->table[philo->nbr - 2] = 1;
+		philo->table[philo->nbr - 1] = 1;
+		get_timer(philo);
+		printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
+		ft_usleep(philo->time_to_sleep, philo);
+	}
+	else
+		ft_usleep(philo->time_to_eat, philo);
+}
+
 void	*routine(t_philothread *philo)
 {
+	start_forks(philo);
 	while (1)
 	{
 		if (take_forks(philo) == 1)
 		{
-			usleep(philo->time_to_eat * 1000);
+			get_timer(philo);
+			printf("%lld %d is eating\n", philo->timer, philo->nbr);
+			ft_usleep(philo->time_to_eat, philo);
 			if (philo->nbr == 1)
 				philo->table[philo->nbr_of_philos - 1] = 1;
 			else
@@ -144,7 +186,7 @@ void	*routine(t_philothread *philo)
 			philo->table[philo->nbr - 1] = 1;
 			get_timer(philo);
 			printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
-			usleep(philo->time_to_sleep * 1000);
+			ft_usleep(philo->time_to_sleep, philo);
 			get_timer(philo);
 			printf("%lld %d is thinking\n", philo->timer, philo->nbr);
 		}
