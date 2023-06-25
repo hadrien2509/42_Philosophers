@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 14:57:50 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/20 16:11:33 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/25 15:55:31 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ typedef struct s_philothread
 	long long		timer;
 	struct timeval	*current_time;
 	int				forks;
-	pthread_t		thread;
+	pthread_t		thr;
 	pthread_mutex_t	*lock;
 }				t_philothread;
 

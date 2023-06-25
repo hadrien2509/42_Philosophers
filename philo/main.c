@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/25 15:19:37 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/25 16:06:20 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,21 +18,27 @@ int	print_error(char *str)
 	return (1);
 }
 
+ft_exit_thread(t_philothread *philo)
+{
+	
+}
+
 int	check_arguments(int ac, char **av, t_philo *data)
 {
-	if (ac != 4 && ac != 5)
-		return (print_error(ERROR_ARGS));
+	int	error;
+
+	error = 0;
 	if (data->nbr_of_philos < 1)
-		return (print_error(ERROR_ARG0));
+		error = print_error(ERROR_ARG0);
 	if (data->time_to_die < 0)
-		return (print_error(ERROR_ARG1));
+		error = print_error(ERROR_ARG1);
 	if (data->time_to_eat < 0)
-		return (print_error(ERROR_ARG2));
+		error = print_error(ERROR_ARG2);
 	if (data->time_to_sleep < 0)
-		return (print_error(ERROR_ARG3));
+		error = print_error(ERROR_ARG3);
 	if (ac == 6 && (data->must_eat < 0))
-		return (print_error(ERROR_ARG4));
-	return (0);
+		error = print_error(ERROR_ARG4);
+	return (error);
 }
 
 long long	timeval_to_long(const struct timeval *tv)
@@ -81,12 +87,7 @@ void	init_data(t_philo *data, int ac, char **av)
 	data->table = malloc(sizeof(int) * data->nbr_of_philos);
 	if (!data->table)
 		exit (print_error("malloc failed\n"));
-	i = 0;
-	while (i < data->nbr_of_philos)
-	{
-		data->table[i] = 1;
-		i++;
-	}
+	memset(data->table, 1, data->nbr_of_philos);
 }
 
 void	print_mutex(t_philothread *philo, char *str)
@@ -172,7 +173,7 @@ void	start_forks(t_philothread *philo)
 		ft_usleep(philo->time_to_eat, philo);
 }
 
-void	*routine(t_philothread *philo)
+void	*rout(t_philothread *philo)
 {
 	start_forks(philo);
 	while (1)
@@ -224,9 +225,6 @@ void	init_philos(t_philo *data)
 		data->philos[i - 1]->table = data->table;
 		data->philos[i - 1]->nbr_of_philos = data->nbr_of_philos;
 		data->philos[i - 1]->forks = data->forks;
-		// data->philos[i - 1]->thread = malloc(sizeof(pthread_t));
-		// if (!data->philos[i - 1]->thread)
-		// 	exit (1);
 		i++;
 	}
 }
@@ -236,6 +234,8 @@ int	main(int ac, char **av)
 	t_philo		*data;
 	int			i;
 
+	if (ac != 4 && ac != 5)
+		return (print_error(ERROR_ARGS));
 	data = malloc(sizeof(t_philo));
 	if (!data)
 		return (print_error("data structure malloc failed\n"));
@@ -246,13 +246,13 @@ int	main(int ac, char **av)
 	i = 0;
 	while (i < data->nbr_of_philos)
 	{
-		pthread_create(&data->philos[i]->thread, NULL, (void *)routine, data->philos[i]);
+		pthread_create(&data->philos[i]->thr, 0, (void *)rout, data->philos[i]);
 		i++;
 	}
 	i = 0;
 	while (i < data->nbr_of_philos)
 	{
-		pthread_join(data->philos[i]->thread, NULL);
+		pthread_join(data->philos[i]->thr, 0);
 		i++;
 	}
 	return (0);
