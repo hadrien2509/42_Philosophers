@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/22 18:39:53 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/25 15:19:37 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,6 @@ void	init_data(t_philo *data, int ac, char **av)
 		data->must_eat = ft_atoi(av[5]);
 	else
 		data->must_eat = -1;
-	data->last_meal = data->launch_time;
 	data->lock = malloc(sizeof(pthread_mutex_t));
 	if (!data->lock)
 		exit (printf("malloc failed\n"));
@@ -100,7 +99,7 @@ void	print_mutex(t_philothread *philo, char *str)
 	pthread_mutex_unlock(philo->lock);
 }
 
-int	take_forks(t_philothread *philo)
+void	take_forks(t_philothread *philo)
 {
 	pthread_mutex_lock(philo->lock);
 	if (philo->nbr == 1 && philo->table[philo->nbr_of_philos - 1] != 0)
@@ -125,9 +124,18 @@ int	take_forks(t_philothread *philo)
 		philo->forks++;
 	}
 	pthread_mutex_unlock(philo->lock);
-	if (philo->forks == 2)
-		return (1);
-	return (0);
+}
+
+void	check_death(t_philothread *philo)
+{
+	pthread_mutex_lock(philo->lock);
+	get_timer(philo);
+	if (philo->timer > philo->last_meal + philo->time_to_die)
+	{
+		printf("%lld %d died\n", philo->timer, philo->nbr);
+		exit(1);
+	}
+	pthread_mutex_unlock(philo->lock);
 }
 
 void	ft_usleep(long long time, t_philothread *philo)
@@ -136,34 +144,29 @@ void	ft_usleep(long long time, t_philothread *philo)
 	long long		old;
 
 	old = philo->timer;
-	while (philo->timer < old + time - 100)
+	while (philo->timer < old + time)
 	{
+		check_death(philo);
 		usleep(100);
 		get_timer(philo);
-		// printf("%lld < %lld ?\n", philo->timer, old + time - 1000);
 	}
+	check_death(philo);
 }
 
 void	start_forks(t_philothread *philo)
 {
 	if (philo->nbr % 2 == 1 && philo->nbr != philo->nbr_of_philos)
 	{
-		if (philo->nbr == 1)
-			philo->table[philo->nbr_of_philos - 1] = 0;
-		else
-			philo->table[philo->nbr - 1] = 0;
-		philo->table [philo->nbr - 2] = 0;
 		get_timer(philo);
-		printf("%lld %d has taken a fork\n%lld %d has taken a fork\n%lld %d is eating\n", philo->timer, philo->nbr, philo->timer, philo->nbr, philo->timer, philo->nbr);
+		printf("%lld %d has taken a fork\n", philo->timer, philo->nbr);
+		printf("%lld %d has taken a fork\n", philo->timer, philo->nbr);
+		printf("%lld %d is eating\n", philo->timer, philo->nbr);
+		philo->last_meal = philo->timer;
 		ft_usleep(philo->time_to_eat, philo);
-		if (philo->nbr == 1)
-			philo->table[philo->nbr_of_philos - 1] = 1;
-		else
-			philo->table[philo->nbr - 2] = 1;
-		philo->table[philo->nbr - 1] = 1;
 		get_timer(philo);
 		printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
 		ft_usleep(philo->time_to_sleep, philo);
+		printf("%lld %d is thinking\n", philo->timer, philo->nbr);
 	}
 	else
 		ft_usleep(philo->time_to_eat, philo);
@@ -174,20 +177,22 @@ void	*routine(t_philothread *philo)
 	start_forks(philo);
 	while (1)
 	{
-		if (take_forks(philo) == 1)
+		check_death(philo);
+		take_forks(philo);
+		if (philo->forks == 2)
 		{
 			get_timer(philo);
 			printf("%lld %d is eating\n", philo->timer, philo->nbr);
+			philo->last_meal = philo->timer;
 			ft_usleep(philo->time_to_eat, philo);
+			printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
 			if (philo->nbr == 1)
 				philo->table[philo->nbr_of_philos - 1] = 1;
 			else
 				philo->table[philo->nbr - 2] = 1;
 			philo->table[philo->nbr - 1] = 1;
-			get_timer(philo);
-			printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
+			philo->forks = 0;
 			ft_usleep(philo->time_to_sleep, philo);
-			get_timer(philo);
 			printf("%lld %d is thinking\n", philo->timer, philo->nbr);
 		}
 	}
@@ -213,8 +218,8 @@ void	init_philos(t_philo *data)
 		data->philos[i - 1]->time_to_eat = data->time_to_eat;
 		data->philos[i - 1]->time_to_sleep = data->time_to_sleep;
 		data->philos[i - 1]->must_eat = data->must_eat;
-		data->philos[i - 1]->must_eat = data->last_meal;
 		data->philos[i - 1]->launch_time = data->launch_time;
+		data->philos[i - 1]->last_meal = 0;
 		data->philos[i - 1]->lock = data->lock;
 		data->philos[i - 1]->table = data->table;
 		data->philos[i - 1]->nbr_of_philos = data->nbr_of_philos;
