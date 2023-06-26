@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/25 16:06:20 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/26 19:41:08 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,10 @@ int	print_error(char *str)
 	return (1);
 }
 
-ft_exit_thread(t_philothread *philo)
-{
+// ft_exit_thread(t_philothread *philo)
+// {
 	
-}
+// }
 
 int	check_arguments(int ac, char **av, t_philo *data)
 {
@@ -62,7 +62,19 @@ int	get_timer(t_philothread *philo)
 	return (0);
 }
 
-void	init_data(t_philo *data, int ac, char **av)
+void	set_table(t_philo *data)
+{
+	int		i;
+
+	i = 0;
+	while (i < data->nbr_of_philos)
+	{
+		data->table[i] = 1;
+		i++;
+	}
+}
+
+int	init_data(t_philo *data, int ac, char **av)
 {
 	struct timeval	tv;
 	int				i;
@@ -74,20 +86,20 @@ void	init_data(t_philo *data, int ac, char **av)
 	data->time_to_die = ft_atoi(av[2]);
 	data->time_to_eat = ft_atoi(av[3]);
 	data->time_to_sleep = ft_atoi(av[4]);
-	data->forks = 0;
 	if (ac == 6)
 		data->must_eat = ft_atoi(av[5]);
 	else
 		data->must_eat = -1;
+	data->dead = malloc(sizeof(int));
+	*data->dead = 0;
 	data->lock = malloc(sizeof(pthread_mutex_t));
-	if (!data->lock)
-		exit (printf("malloc failed\n"));
-	if (pthread_mutex_init(data->lock, NULL) != 0)
-		exit (print_error("\n mutex init failed\n"));
 	data->table = malloc(sizeof(int) * data->nbr_of_philos);
-	if (!data->table)
-		exit (print_error("malloc failed\n"));
-	memset(data->table, 1, data->nbr_of_philos);
+	if (!data->lock || !data->dead || !data->table)
+		return (print_error("malloc failed\n"));
+	if (pthread_mutex_init(data->lock, NULL) != 0)
+		return (print_error("\n mutex init failed\n"));
+	set_table(data);
+	return (0);
 }
 
 void	print_mutex(t_philothread *philo, char *str)
@@ -129,14 +141,18 @@ void	take_forks(t_philothread *philo)
 
 int	check_death(t_philothread *philo)
 {
-	if (philo->dead)
-		return (1);
 	pthread_mutex_lock(philo->lock);
+	if (*philo->dead == 1)
+	{
+		pthread_mutex_unlock(philo->lock);
+		return (1);
+	}
 	get_timer(philo);
 	if (philo->timer > philo->last_meal + philo->time_to_die)
 	{
 		printf("%lld %d died\n", philo->timer, philo->nbr);
-		philo->dead = 1;
+		*philo->dead = 1;
+		pthread_mutex_unlock(philo->lock);
 		return (1);
 	}
 	pthread_mutex_unlock(philo->lock);
@@ -165,7 +181,8 @@ int	start_forks(t_philothread *philo)
 {
 	if (philo->nbr % 2 == 1 && philo->nbr != philo->nbr_of_philos)
 	{
-		get_timer(philo);
+		if (check_death(philo))
+			return (1);
 		printf("%lld %d has taken a fork\n", philo->timer, philo->nbr);
 		printf("%lld %d has taken a fork\n", philo->timer, philo->nbr);
 		printf("%lld %d is eating\n", philo->timer, philo->nbr);
@@ -244,7 +261,8 @@ void	init_philos(t_philo *data)
 		data->philos[i - 1]->lock = data->lock;
 		data->philos[i - 1]->table = data->table;
 		data->philos[i - 1]->nbr_of_philos = data->nbr_of_philos;
-		data->philos[i - 1]->forks = data->forks;
+		data->philos[i - 1]->forks = 0;
+		data->philos[i - 1]->dead = data->dead;
 		i++;
 	}
 }
@@ -280,6 +298,6 @@ int	main(int ac, char **av)
 		pthread_join(data->philos[i]->thr, 0);
 		i++;
 	}
-	free_memory(data);
+	// free_memory(data);
 	return (0);
 }

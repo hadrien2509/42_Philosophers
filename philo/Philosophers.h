@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 14:57:50 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/25 15:55:31 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/26 17:32:35 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ typedef struct s_philothread
 	long long		timer;
 	struct timeval	*current_time;
 	int				forks;
-	int				dead;
+	int				*dead;
 	pthread_t		thr;
 	pthread_mutex_t	*lock;
 }				t_philothread;
@@ -55,10 +55,10 @@ typedef struct s_philo
 	long long		time_to_eat;
 	long long		time_to_sleep;
 	int				must_eat;
+	int				*dead;
 	long long		last_meal;
 	long long		launch_time;
 	long long		timer;
-	int				forks;
 	pthread_mutex_t	*lock;
 }				t_philo;
 
