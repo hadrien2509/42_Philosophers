@@ -127,19 +127,23 @@ void	take_forks(t_philothread *philo)
 	pthread_mutex_unlock(philo->lock);
 }
 
-void	check_death(t_philothread *philo)
+int	check_death(t_philothread *philo)
 {
+	if (philo->dead)
+		return (1);
 	pthread_mutex_lock(philo->lock);
 	get_timer(philo);
 	if (philo->timer > philo->last_meal + philo->time_to_die)
 	{
 		printf("%lld %d died\n", philo->timer, philo->nbr);
-		exit(1);
+		philo->dead = 1;
+		return (1);
 	}
 	pthread_mutex_unlock(philo->lock);
+	return (0);
 }
 
-void	ft_usleep(long long time, t_philothread *philo)
+int	ft_usleep(long long time, t_philothread *philo)
 {
 	struct timeval	*tv;
 	long long		old;
@@ -147,14 +151,17 @@ void	ft_usleep(long long time, t_philothread *philo)
 	old = philo->timer;
 	while (philo->timer < old + time)
 	{
-		check_death(philo);
+		if (check_death(philo))
+			return (1);
 		usleep(100);
 		get_timer(philo);
 	}
-	check_death(philo);
+	if (check_death(philo))
+		return (1);
+	return (0);
 }
 
-void	start_forks(t_philothread *philo)
+int	start_forks(t_philothread *philo)
 {
 	if (philo->nbr % 2 == 1 && philo->nbr != philo->nbr_of_philos)
 	{
@@ -163,14 +170,29 @@ void	start_forks(t_philothread *philo)
 		printf("%lld %d has taken a fork\n", philo->timer, philo->nbr);
 		printf("%lld %d is eating\n", philo->timer, philo->nbr);
 		philo->last_meal = philo->timer;
-		ft_usleep(philo->time_to_eat, philo);
-		get_timer(philo);
+		if (ft_usleep(philo->time_to_eat, philo))
+			return (1);
 		printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
-		ft_usleep(philo->time_to_sleep, philo);
+		if (ft_usleep(philo->time_to_sleep, philo))
+			return (1);
 		printf("%lld %d is thinking\n", philo->timer, philo->nbr);
 	}
 	else
-		ft_usleep(philo->time_to_eat, philo);
+	{
+		if (ft_usleep(philo->time_to_eat, philo))
+			return (1);
+	}
+	return (0);
+}
+
+void	put_forks(t_philothread *philo)
+{
+	if (philo->nbr == 1)
+		philo->table[philo->nbr_of_philos - 1] = 1;
+	else
+		philo->table[philo->nbr - 2] = 1;
+	philo->table[philo->nbr - 1] = 1;
+	philo->forks = 0;
 }
 
 void	*rout(t_philothread *philo)
@@ -178,22 +200,20 @@ void	*rout(t_philothread *philo)
 	start_forks(philo);
 	while (1)
 	{
-		check_death(philo);
+		if (check_death(philo))
+			return (NULL);
 		take_forks(philo);
 		if (philo->forks == 2)
 		{
 			get_timer(philo);
 			printf("%lld %d is eating\n", philo->timer, philo->nbr);
 			philo->last_meal = philo->timer;
-			ft_usleep(philo->time_to_eat, philo);
+			if (ft_usleep(philo->time_to_eat, philo))
+				return (NULL);
 			printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
-			if (philo->nbr == 1)
-				philo->table[philo->nbr_of_philos - 1] = 1;
-			else
-				philo->table[philo->nbr - 2] = 1;
-			philo->table[philo->nbr - 1] = 1;
-			philo->forks = 0;
-			ft_usleep(philo->time_to_sleep, philo);
+			put_forks(philo);
+			if (ft_usleep(philo->time_to_sleep, philo))
+				return (NULL);
 			printf("%lld %d is thinking\n", philo->timer, philo->nbr);
 		}
 	}
@@ -229,6 +249,11 @@ void	init_philos(t_philo *data)
 	}
 }
 
+void	free_memory(t_philo *data)
+{
+	
+}
+
 int	main(int ac, char **av)
 {
 	t_philo		*data;
@@ -255,5 +280,6 @@ int	main(int ac, char **av)
 		pthread_join(data->philos[i]->thr, 0);
 		i++;
 	}
+	free_memory(data);
 	return (0);
 }

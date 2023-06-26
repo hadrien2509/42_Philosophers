@@ -41,6 +41,7 @@ typedef struct s_philothread
 	long long		timer;
 	struct timeval	*current_time;
 	int				forks;
+	int				dead;
 	pthread_t		thr;
 	pthread_mutex_t	*lock;
 }				t_philothread;
