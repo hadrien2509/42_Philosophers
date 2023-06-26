@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/26 19:41:08 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/26 21:08:10 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,6 +86,7 @@ int	init_data(t_philo *data, int ac, char **av)
 	data->time_to_die = ft_atoi(av[2]);
 	data->time_to_eat = ft_atoi(av[3]);
 	data->time_to_sleep = ft_atoi(av[4]);
+	data->philos = 0;
 	if (ac == 6)
 		data->must_eat = ft_atoi(av[5]);
 	else
@@ -212,6 +213,19 @@ void	put_forks(t_philothread *philo)
 	philo->forks = 0;
 }
 
+int	check_philo_meals(t_philothread * philo)
+{
+	if (philo->must_eat >= 0)
+	{
+		philo->meals++;
+		if (philo->meals >= philo->must_eat)
+			philo->philo_feed++;
+		if (philo->philo_feed == philo->nbr_of_philos)
+			return (1);
+	}
+	return (0);
+}
+
 void	*rout(t_philothread *philo)
 {
 	start_forks(philo);
@@ -225,6 +239,14 @@ void	*rout(t_philothread *philo)
 			get_timer(philo);
 			printf("%lld %d is eating\n", philo->timer, philo->nbr);
 			philo->last_meal = philo->timer;
+			if (philo->must_eat >= 0)
+			{
+				meals++;
+				if (meals >= philo->must_eat)
+					philo->philo_feed++;
+				if (philo->philo_feed == philo->nbr_of_philos)
+					return (1);
+			}
 			if (ft_usleep(philo->time_to_eat, philo))
 				return (NULL);
 			printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
@@ -237,39 +259,71 @@ void	*rout(t_philothread *philo)
 	return (NULL);
 }
 
-void	init_philos(t_philo *data)
+void	copy_data_to_philo(t_philo *data, int i)
+{
+	data->philos[i - 1]->nbr = i;
+	data->philos[i - 1]->time_to_die = data->time_to_die;
+	data->philos[i - 1]->time_to_eat = data->time_to_eat;
+	data->philos[i - 1]->time_to_sleep = data->time_to_sleep;
+	data->philos[i - 1]->must_eat = data->must_eat;
+	data->philos[i - 1]->launch_time = data->launch_time;
+	data->philos[i - 1]->last_meal = 0;
+	data->philos[i - 1]->lock = data->lock;
+	data->philos[i - 1]->table = data->table;
+	data->philos[i - 1]->nbr_of_philos = data->nbr_of_philos;
+	data->philos[i - 1]->forks = 0;
+	data->philos[i - 1]->dead = data->dead;
+}
+
+int	init_philos(t_philo *data)
 {
 	int	i;
 
 	data->philos = malloc(sizeof(t_philothread *) * (data->nbr_of_philos + 1));
 	if (!data->philos)
-		exit (42);
+		return (print_error(ERROR_MALLOC));
 	data->philos[data->nbr_of_philos] = 0;
 	i = 1;
 	while (i <= data->nbr_of_philos)
 	{
 		data->philos[i - 1] = malloc(sizeof(t_philothread));
 		if (!data->philos[i - 1])
-			exit (print_error("philo malloc failed\n"));
-		data->philos[i - 1]->nbr = i;
-		data->philos[i - 1]->time_to_die = data->time_to_die;
-		data->philos[i - 1]->time_to_eat = data->time_to_eat;
-		data->philos[i - 1]->time_to_sleep = data->time_to_sleep;
-		data->philos[i - 1]->must_eat = data->must_eat;
-		data->philos[i - 1]->launch_time = data->launch_time;
-		data->philos[i - 1]->last_meal = 0;
-		data->philos[i - 1]->lock = data->lock;
-		data->philos[i - 1]->table = data->table;
-		data->philos[i - 1]->nbr_of_philos = data->nbr_of_philos;
-		data->philos[i - 1]->forks = 0;
-		data->philos[i - 1]->dead = data->dead;
+			return (print_error(ERROR_MALLOC));
+		copy_data_to_philo(data, i);
 		i++;
+	}
+	return (0);
+}
+
+void	free_threads(t_philo *data)
+{
+	int	i;
+
+	i = 1;
+	if (data->philos)
+	{
+		while (data->philos[i - 1])
+		{
+			free(data->philos[i - 1]);
+			i++;
+		}
+		free(data->philos);
 	}
 }
 
 void	free_memory(t_philo *data)
 {
-	
+	if (data->lock)
+	{
+		pthread_mutex_destroy(data->lock);
+		free(data->lock);
+	}
+	if (data->table)
+		free(data->table);
+	if (data->dead)
+		free(data->dead);
+	free_threads(data);
+	free(data);
 }
 
 int	main(int ac, char **av)
@@ -281,11 +335,22 @@ int	main(int ac, char **av)
 		return (print_error(ERROR_ARGS));
 	data = malloc(sizeof(t_philo));
 	if (!data)
-		return (print_error("data structure malloc failed\n"));
-	init_data(data, ac, av);
-	if (check_arguments(ac, av, data) == 1)
+		return (print_error(ERROR_MALLOC));
+	if (init_data(data, ac, av) == 1)
+	{
+		free_memory(data);
 		return (1);
-	init_philos(data);
+	}
+	if (check_arguments(ac, av, data) == 1)
+	{
+		free_memory(data);
+		return (1);
+	}
+	if (init_philos(data) == 1)
+	{
+		free_memory(data);
+		return (1);
+	}
 	i = 0;
 	while (i < data->nbr_of_philos)
 	{
@@ -298,6 +363,6 @@ int	main(int ac, char **av)
 		pthread_join(data->philos[i]->thr, 0);
 		i++;
 	}
-	// free_memory(data);
+	free_memory(data);
 	return (0);
 }

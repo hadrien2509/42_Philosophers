@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 14:57:50 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/26 17:32:35 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/26 21:09:00 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 # define ERROR_ARG2 "Third argument is the time it takes each philosopher to eat and it must be a number superior or equal to zero\n"
 # define ERROR_ARG3 "Fourth argument is the maximum of time a philosopher can survive since last meal and it must be a number superior or equal to zero\n"
 # define ERROR_ARG4 "Fifth argument is how much times each philosopher has to eat and it must be a number superior or equal to zero\n"
+# define ERROR_MALLOC "Memory allocation failed\n"
 
 typedef struct s_philothread
 {
@@ -39,6 +40,8 @@ typedef struct s_philothread
 	int				nbr;
 	long long		launch_time;
 	long long		timer;
+	int				meals;
+	int				*philo_feed;
 	struct timeval	*current_time;
 	int				forks;
 	int				*dead;
@@ -55,6 +58,7 @@ typedef struct s_philo
 	long long		time_to_eat;
 	long long		time_to_sleep;
 	int				must_eat;
+	int				*philo_feed;
 	int				*dead;
 	long long		last_meal;
 	long long		launch_time;
