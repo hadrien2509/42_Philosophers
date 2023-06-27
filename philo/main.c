@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/26 21:08:10 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/27 19:40:27 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,27 +18,27 @@ int	print_error(char *str)
 	return (1);
 }
 
-// ft_exit_thread(t_philothread *philo)
-// {
-	
-// }
-
 int	check_arguments(int ac, char **av, t_philo *data)
 {
 	int	error;
 
 	error = 0;
 	if (data->nbr_of_philos < 1)
-		error = print_error(ERROR_ARG0);
-	if (data->time_to_die < 0)
 		error = print_error(ERROR_ARG1);
-	if (data->time_to_eat < 0)
+	if (data->time_to_die < 0)
 		error = print_error(ERROR_ARG2);
-	if (data->time_to_sleep < 0)
+	if (data->time_to_eat < 0)
 		error = print_error(ERROR_ARG3);
-	if (ac == 6 && (data->must_eat < 0))
+	if (data->time_to_sleep < 0)
 		error = print_error(ERROR_ARG4);
-	return (error);
+	if (ac == 6 && (data->must_eat < 0))
+		error = print_error(ERROR_ARG5);
+	if (error)
+		return (1);
+	data->table = malloc(sizeof(int) * data->nbr_of_philos);
+	if (!data->table)
+		return (print_error(ERROR_MALLOC));
+	return (0);
 }
 
 long long	timeval_to_long(const struct timeval *tv)
@@ -74,31 +74,42 @@ void	set_table(t_philo *data)
 	}
 }
 
-int	init_data(t_philo *data, int ac, char **av)
+int	convert_args(t_philo *data, int ac, char **av)
 {
-	struct timeval	tv;
-	int				i;
-
-	if (gettimeofday(&tv, NULL) == -1)
-		exit (print_error("gettimeofday error\n"));
-	data->launch_time = timeval_to_long(&tv);
 	data->nbr_of_philos = ft_atoi(av[1]);
 	data->time_to_die = ft_atoi(av[2]);
 	data->time_to_eat = ft_atoi(av[3]);
 	data->time_to_sleep = ft_atoi(av[4]);
-	data->philos = 0;
+	data->philo_feed = 0;
 	if (ac == 6)
+	{
 		data->must_eat = ft_atoi(av[5]);
+		data->philo_feed = malloc(sizeof(int));
+		if (!data->philo_feed)
+			return (print_error(ERROR_MALLOC));
+		*data->philo_feed = 0;
+	}
 	else
 		data->must_eat = -1;
+	return (0);
+}
+
+int	init_data(t_philo *data, int ac, char **av)
+{
+	int				i;
+	int				error;
+
+	data->philos = 0;
+	data->table = 0;
+	error = 0;
+	error = convert_args(data, ac, av);
 	data->dead = malloc(sizeof(int));
 	*data->dead = 0;
 	data->lock = malloc(sizeof(pthread_mutex_t));
-	data->table = malloc(sizeof(int) * data->nbr_of_philos);
-	if (!data->lock || !data->dead || !data->table)
-		return (print_error("malloc failed\n"));
+	if (!data->lock || !data->dead || error)
+		return (print_error(ERROR_MALLOC));
 	if (pthread_mutex_init(data->lock, NULL) != 0)
-		return (print_error("\n mutex init failed\n"));
+		return (print_error("mutex init failed\n"));
 	set_table(data);
 	return (0);
 }
@@ -148,6 +159,11 @@ int	check_death(t_philothread *philo)
 		pthread_mutex_unlock(philo->lock);
 		return (1);
 	}
+	if (philo->must_eat >= 0 && *philo->philo_feed == philo->nbr_of_philos)
+	{
+		pthread_mutex_unlock(philo->lock);
+		return (1);
+	}
 	get_timer(philo);
 	if (philo->timer > philo->last_meal + philo->time_to_die)
 	{
@@ -165,6 +181,7 @@ int	ft_usleep(long long time, t_philothread *philo)
 	struct timeval	*tv;
 	long long		old;
 
+	get_timer(philo);
 	old = philo->timer;
 	while (philo->timer < old + time)
 	{
@@ -218,10 +235,10 @@ int	check_philo_meals(t_philothread * philo)
 	if (philo->must_eat >= 0)
 	{
 		philo->meals++;
-		if (philo->meals >= philo->must_eat)
-			philo->philo_feed++;
-		if (philo->philo_feed == philo->nbr_of_philos)
-			return (1);
+		if (philo->meals == philo->must_eat)
+			(*philo->philo_feed)++;
+		if (*philo->philo_feed == philo->nbr_of_philos)
+			return (print_error(PHILO_FEED));
 	}
 	return (0);
 }
@@ -239,14 +256,8 @@ void	*rout(t_philothread *philo)
 			get_timer(philo);
 			printf("%lld %d is eating\n", philo->timer, philo->nbr);
 			philo->last_meal = philo->timer;
-			if (philo->must_eat >= 0)
-			{
-				meals++;
-				if (meals >= philo->must_eat)
-					philo->philo_feed++;
-				if (philo->philo_feed == philo->nbr_of_philos)
-					return (1);
-			}
+			if (check_philo_meals(philo))
+				return (NULL);
 			if (ft_usleep(philo->time_to_eat, philo))
 				return (NULL);
 			printf("%lld %d is sleeping\n", philo->timer, philo->nbr);
@@ -266,18 +277,19 @@ void	copy_data_to_philo(t_philo *data, int i)
 	data->philos[i - 1]->time_to_eat = data->time_to_eat;
 	data->philos[i - 1]->time_to_sleep = data->time_to_sleep;
 	data->philos[i - 1]->must_eat = data->must_eat;
-	data->philos[i - 1]->launch_time = data->launch_time;
 	data->philos[i - 1]->last_meal = 0;
 	data->philos[i - 1]->lock = data->lock;
 	data->philos[i - 1]->table = data->table;
 	data->philos[i - 1]->nbr_of_philos = data->nbr_of_philos;
 	data->philos[i - 1]->forks = 0;
 	data->philos[i - 1]->dead = data->dead;
+	data->philos[i - 1]->philo_feed = data->philo_feed;
+	data->philos[i - 1]->meals = 0;
 }
 
 int	init_philos(t_philo *data)
 {
-	int	i;
+	int				i;
 
 	data->philos = malloc(sizeof(t_philothread *) * (data->nbr_of_philos + 1));
 	if (!data->philos)
@@ -322,16 +334,19 @@ void	free_memory(t_philo *data)
 		free(data->table);
 	if (data->dead)
 		free(data->dead);
+	if (data->philo_feed)
+		free(data->philo_feed);
 	free_threads(data);
 	free(data);
 }
 
 int	main(int ac, char **av)
 {
-	t_philo		*data;
-	int			i;
+	t_philo			*data;
+	int				i;
+	struct timeval	tv;
 
-	if (ac != 4 && ac != 5)
+	if (ac != 5 && ac != 6)
 		return (print_error(ERROR_ARGS));
 	data = malloc(sizeof(t_philo));
 	if (!data)
@@ -352,8 +367,12 @@ int	main(int ac, char **av)
 		return (1);
 	}
 	i = 0;
+	if (gettimeofday(&tv, NULL) == -1)
+		exit (print_error("gettimeofday error\n"));
+	data->launch_time = timeval_to_long(&tv);
 	while (i < data->nbr_of_philos)
 	{
+		data->philos[i]->launch_time = data->launch_time;
 		pthread_create(&data->philos[i]->thr, 0, (void *)rout, data->philos[i]);
 		i++;
 	}

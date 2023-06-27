@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 14:57:50 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/26 21:09:00 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/27 17:31:05 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,13 +20,20 @@
 # include <sys/time.h>
 # include <pthread.h>
 
-# define ERROR_ARGS "This program takes four or five argument :\n\n- number_of_philosophers\n- time_to_die\n- time_to_sleep\n- number_of_times_each_philosopher_must_eat (Optional)\n\n"
-# define ERROR_ARG0 "First argument is the number of philosophers and must be a number superior or equal to one\n"
-# define ERROR_ARG1 "Second argument is the time of death and must be a number superior or equal to zero\n"
-# define ERROR_ARG2 "Third argument is the time it takes each philosopher to eat and it must be a number superior or equal to zero\n"
-# define ERROR_ARG3 "Fourth argument is the maximum of time a philosopher can survive since last meal and it must be a number superior or equal to zero\n"
-# define ERROR_ARG4 "Fifth argument is how much times each philosopher has to eat and it must be a number superior or equal to zero\n"
+# define ERROR_ARGS "Usage: program <number_of_philosophers> <time_to_die> <time_to_sleep> \
+[<number_of_times_each_philosopher_must_eat>]\n"
+# define ERROR_ARG1 "First argument must be a positive integer \
+(number_of_philosophers)\n"
+# define ERROR_ARG2 "Second argument must be a non-negative number \
+(time_to_die)\n"
+# define ERROR_ARG3 "Third argument must be a non-negative number \
+(time_to_eat)\n"
+# define ERROR_ARG4 "Third argument must be a non-negative number \
+(time_to_sleep)\n"
+# define ERROR_ARG5 "Fourth argument must be a non-negative number \
+(number_of_times_each_philosopher_must_eat)\n"
 # define ERROR_MALLOC "Memory allocation failed\n"
+# define PHILO_FEED "All philosophers have been fed\n"
 
 typedef struct s_philothread
 {
