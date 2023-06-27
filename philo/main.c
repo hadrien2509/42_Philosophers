@@ -6,7 +6,7 @@
 /*   By: hgeissle <hgeissle@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 15:08:19 by hgeissle          #+#    #+#             */
-/*   Updated: 2023/06/27 19:40:27 by hgeissle         ###   ########.fr       */
+/*   Updated: 2023/06/27 19:49:03 by hgeissle         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,18 @@ int	print_error(char *str)
 {
 	ft_putstr_fd(str, 2);
 	return (1);
+}
+
+void	set_table(t_philo *data)
+{
+	int		i;
+
+	i = 0;
+	while (i < data->nbr_of_philos)
+	{
+		data->table[i] = 1;
+		i++;
+	}
 }
 
 int	check_arguments(int ac, char **av, t_philo *data)
@@ -38,6 +50,7 @@ int	check_arguments(int ac, char **av, t_philo *data)
 	data->table = malloc(sizeof(int) * data->nbr_of_philos);
 	if (!data->table)
 		return (print_error(ERROR_MALLOC));
+	set_table(data);
 	return (0);
 }
 
@@ -60,18 +73,6 @@ int	get_timer(t_philothread *philo)
 	current_time = timeval_to_long(&tv);
 	philo->timer = current_time - philo->launch_time;
 	return (0);
-}
-
-void	set_table(t_philo *data)
-{
-	int		i;
-
-	i = 0;
-	while (i < data->nbr_of_philos)
-	{
-		data->table[i] = 1;
-		i++;
-	}
 }
 
 int	convert_args(t_philo *data, int ac, char **av)
@@ -110,7 +111,6 @@ int	init_data(t_philo *data, int ac, char **av)
 		return (print_error(ERROR_MALLOC));
 	if (pthread_mutex_init(data->lock, NULL) != 0)
 		return (print_error("mutex init failed\n"));
-	set_table(data);
 	return (0);
 }
 
