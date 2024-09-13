@@ -1,9 +1,6 @@
-Sure, I can create a comprehensive and engaging README for the "/Volumes/Storage/goinfre/hgeissle/42_Philosophers" repository. Here it is:
-
 # 42 Philosophers
 
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://github.com/yourusername/42_Philosophers/actions)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![42](https://img.shields.io/badge/School-42-black?style=flat-square&logo=42)
 
 ## Overview
 
@@ -26,7 +23,7 @@ The 42 Philosophers project is a multi-threaded application that simulates the c
 
 To run the 42 Philosophers project locally, follow these steps:
 
-1. Clone the repository: `git clone https://github.com/yourusername/42_Philosophers.git`
+1. Clone the repository: `git clone https://github.com/hadrien2509/42_Philosophers.git`
 2. Navigate to the project directory: `cd 42_Philosophers`
 3. Compile the project: `make`
 4. Run the executable with the required arguments:
@@ -46,7 +43,7 @@ This command will run the simulation with 5 philosophers, where each philosopher
 ## Project Structure
 
 ```
-/Volumes/Storage/goinfre/hgeissle/42_Philosophers
+42_Philosophers
 ├── README.md
 ├── .git/
 ├── philo/
